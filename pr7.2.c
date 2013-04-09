@@ -34,7 +34,7 @@ extern int optind;
 extern int optopt;
 extern int opterr;
 
-
+int verbose;
 int open_file(char const *filename);
 int eval_line(char *cmdline);                   /* evaluate a command line */
 int parse(char *buf, char *argv[]);             /* build the argv array */

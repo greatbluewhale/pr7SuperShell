@@ -48,7 +48,6 @@ void SIGINT_handler(int sig)
   if (foreground_pid == 0)
     {
       fprintf(stderr, "SIGINT ignored\n");
-	  signal(SIGINT, SIGINT_handler);
 
     }
   else
@@ -56,6 +55,7 @@ void SIGINT_handler(int sig)
       kill(foreground_pid, SIGINT);
       foreground_pid = 0;
     }
+	signal(SIGINT, SIGINT_handler);
 }
 /*----------------------------------------------------------------------------*/
 /* Displays information for program options */
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
   char cmdline[MAXLINE];                /* command line */
   int flag = 0; //don't go to shell if 1
   list_init(&background_pid_table);
-  list->name = "Background Processes"
+  background_pid_table.name = "Background Processes";
   signal(SIGINT, SIGINT_handler);	//install signal handler to start.
   while ((ch = getopt(argc, argv, ":hvies:")) != -1){
 	switch (ch) {
@@ -171,7 +171,6 @@ int main(int argc, char *argv[])
 }
 
 /*----------------------------------------------------------------------------*/
-
 /* evaluate a command line
  * Compare to eval() in CS:APP Fig. 8.23.
  */
@@ -190,10 +189,10 @@ int eval_line(char *cmdline)
   if (argv[0] == NULL)          /* ignore empty lines */
     { return ret; }
 	
- if (strcmp(argv[0], "#") == 0){		/* ignores comment lines **EXTRA CREDIT** */ 
+  if (strcmp(argv[0], "#") == 0){		/* ignores comment lines **EXTRA CREDIT** */ 
 	strcpy(argv[0], "\0");
 	return ret;
-  }
+   }
 	
   if (builtin(argv) == 1)       /* the work is done */
     { return ret; }
@@ -236,7 +235,6 @@ int eval_line(char *cmdline)
 }
 
 /*----------------------------------------------------------------------------*/
-
 /* parse the command line and build the argv array
  *
  * Compare to parseline() in CS:APP Fig. 8.24.
@@ -275,7 +273,6 @@ int parse(char *buf, char *argv[])
 }
 
 /*----------------------------------------------------------------------------*/
-
 /* if first arg is a builtin command, run it and return true
  *
  * Compare to builtin_command() in CS:APP Fig. 8.23.

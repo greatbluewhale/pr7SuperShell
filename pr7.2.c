@@ -216,6 +216,7 @@ int eval_line(char *cmdline)
 	    if (list_add_once(&background_pid_table, pid, 1) == NULL)
       { fprintf(stderr, "%s: could not add process to list: %d\n", argv[0], \
                 pid); }
+      if (verbose) list_print(&background_pid_table);
       foreground_pid = 0; //It's running in the background
       printf("background process %d: %s", (int) pid, cmdline);
     }

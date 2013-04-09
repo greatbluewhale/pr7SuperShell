@@ -1,4 +1,5 @@
 echo greetings from pr7.init
 whoami
 hostname
+# whoami
 echo ---------

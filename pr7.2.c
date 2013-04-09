@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include "pr7_list.h"
 
 #define MAXLINE 128
 #define MAXARGS 128
@@ -39,7 +40,8 @@ int eval_line(char *cmdline);                   /* evaluate a command line */
 int parse(char *buf, char *argv[]);             /* build the argv array */
 int builtin(char *argv[]);                      /* if builtin command, run it */
 extern char **environ;
-static pid_t foreground_pid = 0; 
+static pid_t foreground_pid = 0;
+static struct pr7_list background_pid_table; // backgroud process ID table
 /*----------------------------------------------------------------------------*/
 void SIGINT_handler(int sig)
 {
@@ -103,6 +105,7 @@ int main(int argc, char *argv[])
   int ch;
   char cmdline[MAXLINE];                /* command line */
   int flag = 0; //don't go to shell if 1
+  list_init(&background_pid_table);
   signal(SIGINT, SIGINT_handler);	//install signal handler to start.
   while ((ch = getopt(argc, argv, ":hvies:")) != -1){
 	switch (ch) {
@@ -199,24 +202,27 @@ int eval_line(char *cmdline)
     {
 	  //printf("pid ID: %d\n", getpid());  //DEBUGGING
 	  foreground_pid = 1; //it's running in the foreground
-	  
+    }
+	 
 	  if (execvp(argv[0], argv) == -1)
         {
-          printf("%s: failed: %s\n", argv[0], strerror(errno));
+          fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
           _exit(EXIT_FAILURE);
         }
-    }
 
-  if (background)               /* parent waits for foreground job to terminate */
+  if (background)            /* parent waits for foreground job to terminate */
     {
-	  foreground_pid = 0; //It's running in the background
+	    if (list_add_once(&background_pid_table, pid, 1) == NULL)
+      { fprintf(stderr, "%s: could not add process to list: %d\n", argv[0], \
+                pid); }
+      foreground_pid = 0; //It's running in the background
       printf("background process %d: %s", (int) pid, cmdline);
     }
   else
     {
       if (waitpid(pid, &ret, 0) == -1)
         {
-          printf("%s: failed: %s\n", argv[0], strerror(errno));
+          fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
           exit(EXIT_FAILURE);
         }
     }

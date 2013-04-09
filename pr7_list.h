@@ -32,7 +32,7 @@ struct pr7_process {
 
 void list_init(struct pr7_list *list);
 struct pr7_process *list_add(struct pr7_list *list, pid_t pid);
-struct pr7_process *list_search(struct pr7_list *list, pid_t pid);
+struct pr7_process *list_search(struct pr7_list *list, pid_t key);
 struct pr7_process *list_add_once(struct pr7_list *list, pid_t pid, \
                                   int mode);
 void list_update_entry(struct pr7_list *list, pid_t pid, int status);

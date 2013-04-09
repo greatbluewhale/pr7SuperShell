@@ -8,16 +8,17 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "pr7_list.h"
 
 extern int verbose;
 
 // Initializes list
-void list_init(struct pr7_list * const list)
+void list_init(struct pr7_list * list)
 {
   list->length = 0;
   list->head = NULL;
-  list_>tail = NULL;
+  list->tail = NULL;
   list->name = NULL;
 }
 
@@ -47,10 +48,12 @@ struct pr7_process *list_add(struct pr7_list *list, pid_t pid)
   if (list->tail == NULL) list->tail = process;
   
   list->length++;
+  
+  return process;
 }
 
 // Searches list for process with given PID, returns NULL if not found
-struct pr7_process *list_search(const struct pr7_list *list, pid_t key)
+struct pr7_process *list_search(struct pr7_list *list, pid_t key)
 {
   if (list == NULL) return NULL;
   if (list->head == NULL) return NULL;
@@ -74,7 +77,7 @@ struct pr7_process *list_add_once(struct pr7_list *list, pid_t pid, \
   else if (mode == 1)
   { found->state = STATE_RUNNING; return found; }
   else
-  { fprintf("list_add_once: Invalid mode\n"); return NULL; }
+  { fprintf(stderr, "list_add_once: Invalid mode\n"); return NULL; }
 }
 
 // Updates the specified PID entry, does nothing if PID not found

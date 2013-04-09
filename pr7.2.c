@@ -223,10 +223,12 @@ int eval_line(char *cmdline)
     }
   else
     {
-      if (waitpid(pid, &ret, 0) == -1)
+      while (waitpid(pid, &ret, 0) == (pid_t) -1)
         {
-          fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
-          exit(EXIT_FAILURE);
+          if (errno == ECHLD) {
+            fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
+            exit(EXIT_FAILURE);
+          }
         }
     }
 

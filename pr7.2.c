@@ -48,7 +48,7 @@ void SIGINT_handler(int sig)
 {
   if (foreground_pid == 0)
   {
-    fprintf(stderr, "SIGINT ignored\n");
+		//Ignores the Call, we're in the shell.
   }
   else
   {
@@ -204,7 +204,7 @@ int eval_line(char *cmdline)
   if ((pid = fork()) == 0)      /* child runs user job */
   {
 	  printf("debug::pid ID: %d\n", getpid());  //DEBUGGING
-	  foreground_pid = 1; //it's running in the foreground
+	  foreground_pid = getpid(); //it's running in the foreground
 	  if (execvp(argv[0], argv) == -1)
     {
       fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));

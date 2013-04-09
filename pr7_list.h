@@ -38,7 +38,6 @@ struct pr7_process *list_add_once(struct pr7_list *list, pid_t pid, \
                                   int mode);
 struct pr7_process *list_update_entry(struct pr7_list *list, pid_t pid, int status);
 int list_remove_entry(struct pr7_list *list, pid_t pid);
-int list_
 
 void list_print(struct pr7_list *list);
 

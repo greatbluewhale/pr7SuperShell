@@ -37,25 +37,31 @@ extern int opterr;
 
 int verbose = 0;
 int open_file(char const *filename);
-int eval_line(char *cmdline);                   /* evaluate a command line */
-int parse(char *buf, char *argv[]);             /* build the argv array */
-int builtin(char *argv[]);                      /* if builtin command, run it */
+int eval_line(char *cmdline);                 /* evaluate a command line */
+int parse(char *buf, char *argv[]);           /* build the argv array */
+int builtin(char *argv[]);                    /* if builtin command, run it */
+int cleanup_terminated_children(void);        /* reap background processes */
 extern char **environ;
 static pid_t foreground_pid = 0;
 static struct pr7_list background_pid_table; // backgroud process ID table
 /*----------------------------------------------------------------------------*/
 void SIGINT_handler(int sig)
 {
-  if (foreground_pid == 0)
+  if (sig == SIGINT)
   {
-		//Ignores the Call, we're in the shell.
+    if (foreground_pid == 0)
+    {
+      //Ignores the Call, we're in the shell.
+    }
+    else
+    {
+      kill(foreground_pid, SIGINT);
+      foreground_pid = 0;
+    }
+    signal(SIGINT, SIGINT_handler);
   }
   else
-  {
-    kill(foreground_pid, SIGINT);
-    foreground_pid = 0;
-  }
-	signal(SIGINT, SIGINT_handler);
+  { fprintf(stderr, "signal %d received by SIGINT handler\n", sig); }
 }
 /*----------------------------------------------------------------------------*/
 /* Displays information for program options */
@@ -223,8 +229,6 @@ int eval_line(char *cmdline)
   }
   else
   {
-    pid_t wpid;
-    int status;
     while (waitpid(pid, &ret, 0) == (pid_t) -1)
     {
       if (errno == ECHILD) {
@@ -453,7 +457,7 @@ int cleanup_terminated_children(void)
     
     printf("process %d terminated with status %d", pid, status);
     entry = list_update_entry(&background_pid_table, pid, status);
-    if (verbose) list_print(&background_pid_table)
+    if (verbose) list_print(&background_pid_table);
     if (entry != NULL) list_remove(&background_pid_table, entry);
     count++;
   }

@@ -101,7 +101,7 @@ struct pr7_process *list_add_once(struct pr7_list *list, pid_t pid, \
 struct pr7_process *list_update_entry(struct pr7_list *list, pid_t pid, int status)
 {
   struct pr7_process *entry = list_search(list, pid);
-  if (entry == NULL) return;
+  if (entry == NULL) return NULL;
   
   entry->state = STATE_TERMINATED;
   entry->exit_status = status;

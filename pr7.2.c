@@ -280,7 +280,17 @@ int parse(char *buf, char *argv[])
 
 int builtin(char *argv[]){
   if (strcmp(argv[0], "exit") == 0) {     /* exit command */
-		exit(0);
+		if(background_pid_table.length == 1){
+			printf("There is one backgound job running. \n");
+			return 1;
+		}
+		else if(background_pid_table.length > 0){
+			printf("There are %d backgound jobs running. \n",background_pid_table.length);
+			return 1;
+		}
+		else{
+			exit(0);
+		}
   }
 	
   if (strcmp(argv[0], "echo") == 0) {	/* echo command */

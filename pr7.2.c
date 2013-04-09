@@ -461,7 +461,7 @@ int cleanup_terminated_children(void)
     printf("process %d terminated with status %d", pid, status);
     entry = list_update_entry(&background_pid_table, pid, status);
     if (verbose) list_print(&background_pid_table);
-    if (entry != NULL) list_remove(&background_pid_table, &entry);
+    if (entry != NULL) list_remove(&background_pid_table, entry);
     count++;
   }
   

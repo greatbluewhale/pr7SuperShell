@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
   char cmdline[MAXLINE];                /* command line */
   int flag = 0; //don't go to shell if 1
   list_init(&background_pid_table);
+  list->name = "Background Processes"
   signal(SIGINT, SIGINT_handler);	//install signal handler to start.
   while ((ch = getopt(argc, argv, ":hvies:")) != -1){
 	switch (ch) {

@@ -32,10 +32,7 @@ struct pr7_process *list_add(struct pr7_list *list, pid_t pid)
     fprintf(stderr, "malloc() failed: %s: %d\n", __FILE__, __LINE__);
     return NULL;
   }
-  if (verbose)
-  {
-    printf("@@@@@@@@@\n");
-  }
+  if (verbose) { printf("%s: malloc() allocated %p\n", __FUNCTION__, process); }
   
   process->pid = pid;
   process->state = STATE_RUNNING;

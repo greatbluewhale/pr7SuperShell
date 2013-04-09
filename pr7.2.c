@@ -47,29 +47,15 @@ static struct pr7_list background_pid_table; // backgroud process ID table
 void SIGINT_handler(int sig)
 {
   if (foreground_pid == 0)
-<<<<<<< HEAD
-    {
-      fprintf(stderr, "SIGINT ignored\n");
-
-    }
-  else
-    {
-      kill(foreground_pid, SIGINT);
-      foreground_pid = 0;
-    }
-	signal(SIGINT, SIGINT_handler);
-=======
   {
     fprintf(stderr, "SIGINT ignored\n");
-	  signal(SIGINT, SIGINT_handler);
-    
   }
   else
   {
     kill(foreground_pid, SIGINT);
     foreground_pid = 0;
   }
->>>>>>> Adding errno.h header, Reindenting
+	signal(SIGINT, SIGINT_handler);
 }
 /*----------------------------------------------------------------------------*/
 /* Displays information for program options */
@@ -203,17 +189,10 @@ int eval_line(char *cmdline)
   if (argv[0] == NULL)          /* ignore empty lines */
   { return ret; }
 	
-<<<<<<< HEAD
-  if (strcmp(argv[0], "#") == 0){		/* ignores comment lines **EXTRA CREDIT** */ 
-	strcpy(argv[0], "\0");
-	return ret;
-   }
-=======
   if (strcmp(argv[0], "#") == 0){		/* ignores comment lines **EXTRA CREDIT** */
     strcpy(argv[0], "\0");
     return ret;
   }
->>>>>>> Adding errno.h header, Reindenting
 	
   if (builtin(argv) == 1)       /* the work is done */
   { return ret; }

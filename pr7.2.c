@@ -56,7 +56,8 @@ void SIGINT_handler(int sig)
       kill(foreground_pid, SIGINT);
       foreground_pid = 0;
     }
-} 
+}
+/*----------------------------------------------------------------------------*/
 /* Displays information for program options */
 static void usage(char *prog, int status)
 {
@@ -79,6 +80,7 @@ static void usage(char *prog, int status)
 
   exit(status);
 }
+/*----------------------------------------------------------------------------*/
 /* Opens file, checks for NULL name, but don't send a NULL name to it.*/
 int open_file(char const *filename){
     int ret;
@@ -97,7 +99,7 @@ int open_file(char const *filename){
 	}
 	return EXIT_FAILURE;
 }
-
+/*----------------------------------------------------------------------------*/
 /* Compare to main() in CS:APP Fig. 8.22 */
 int main(int argc, char *argv[])
 {
@@ -204,7 +206,6 @@ int eval_line(char *cmdline)
     {
 	  printf("debug::pid ID: %d\n", getpid());  //DEBUGGING
 	  foreground_pid = 1; //it's running in the foreground
-	 
 	  if (execvp(argv[0], argv) == -1)
         {
           fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
@@ -398,6 +399,12 @@ int builtin(char *argv[]){
 	 printf("MAXARGS: %d\nMAXLINE: %d\n", MAXARGS, MAXLINE);
 	 return 1;
 	}
+	
+  if (strcmp(argv[0], "pjobs") == 0){	/* print all jobs */
+	 list_print(&background_pid_table);
+	 return 1;
+	}
+	
   return 0;                             /* not a builtin command */
 }
 

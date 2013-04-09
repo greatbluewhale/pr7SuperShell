@@ -36,6 +36,10 @@ extern int optopt;
 extern int opterr;
 
 int verbose = 0;
+int kill(pid_t pid, int sig);
+int getopt(int argc, char * const argv[], const char *optstring);
+int setenv(const char *envname, const char *envval, int overwrite);
+int unsetenv(const char *name);
 int open_file(char const *filename);
 int eval_line(char *cmdline);                 /* evaluate a command line */
 int parse(char *buf, char *argv[]);           /* build the argv array */
@@ -230,7 +234,7 @@ int eval_line(char *cmdline)
     { fprintf(stderr, "%s: could not add process to list: %d\n", argv[0], \
               pid); }
     if (verbose) list_print(&background_pid_table);
-    //foreground_pid = 0; //It's running in the background
+    foreground_pid = 0; //It's running in the background
     printf("background process %d: %s\n", (int) pid, cmdline);
   }
   else
@@ -457,8 +461,8 @@ int cleanup_terminated_children(void)
         break;
       }
     }
-    
-    printf("process %d terminated with status %d", pid, status);
+    if(verbose > 0)
+		printf("process %d terminated with status %d\n", pid, status);
     entry = list_update_entry(&background_pid_table, pid, status);
     if (verbose) list_print(&background_pid_table);
     if (entry != NULL) list_remove(&background_pid_table, entry);

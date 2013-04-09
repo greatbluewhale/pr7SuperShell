@@ -201,18 +201,17 @@ int eval_line(char *cmdline)
 	
   if ((pid = fork()) == 0)      /* child runs user job */
     {
-	  //printf("pid ID: %d\n", getpid());  //DEBUGGING
+	  printf("debug::pid ID: %d\n", getpid());  //DEBUGGING
 	  foreground_pid = 1; //it's running in the foreground
-    }
 	 
 	  if (execvp(argv[0], argv) == -1)
         {
           fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
           _exit(EXIT_FAILURE);
         }
-
+    }
   if (background)            /* parent waits for foreground job to terminate */
-    {
+    { 
 	    if (list_add_once(&background_pid_table, pid, 1) == NULL)
       { fprintf(stderr, "%s: could not add process to list: %d\n", argv[0], \
                 pid); }

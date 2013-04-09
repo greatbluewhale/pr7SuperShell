@@ -86,7 +86,7 @@ void list_update_entry(struct pr7_list *list, pid_t pid, int status)
   struct pr7_process *entry = list_search(list, pid);
   if (entry == NULL) return;
   
-  entry->state == STATE_TERMINATED;
+  entry->state = STATE_TERMINATED;
   entry->exit_status = status;
 }
 
@@ -105,7 +105,9 @@ int list_remove(struct pr7_list *list, pid_t pid)
   free(entry);
   //  if (verbose) { print something??? }
   
-  return list->(--length);
+  list->length--;
+  
+  return list->length;
 }
 
 // Prints the contents of the list

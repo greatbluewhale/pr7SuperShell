@@ -49,6 +49,7 @@ void SIGINT_handler(int sig)
 {
   if (sig == SIGINT)
   {
+<<<<<<< HEAD
     if (foreground_pid == 0)
     {
       //Ignores the Call, we're in the shell.
@@ -62,6 +63,18 @@ void SIGINT_handler(int sig)
   }
   else
   { fprintf(stderr, "signal %d received by SIGINT handler\n", sig); }
+=======
+	
+	//Ignores the Call, we're in the shell.
+  }
+  else
+  {
+    kill(foreground_pid, SIGINT);
+    foreground_pid = 0;
+  }
+	printf("\n"); //looks better
+	signal(SIGINT, SIGINT_handler);
+>>>>>>> Added some Verbose and fixed file reading
 }
 /*----------------------------------------------------------------------------*/
 /* Displays information for program options */
@@ -93,6 +106,9 @@ int open_file(char const *filename){
 	FILE *oFile;
 	if(filename != NULL)
     if((oFile = fopen(filename, "r")) != NULL){
+	  if(verbose > 0){
+			printf("pr7: reading %s\n", filename);
+		}
       char strBuf[MAXLINE];
       while(1){
         fgets(strBuf, MAXLINE, oFile);
@@ -110,13 +126,14 @@ int open_file(char const *filename){
 int main(int argc, char *argv[])
 {
   int ret = EXIT_SUCCESS;
-  int ch;
+  int ch, count = 1;
   char cmdline[MAXLINE];                /* command line */
   int flag = 0; //don't go to shell if 1
   list_init(&background_pid_table);
   background_pid_table.name = "Background Processes";
   signal(SIGINT, SIGINT_handler);	//install signal handler to start.
   while ((ch = getopt(argc, argv, ":hvies:")) != -1){
+    count++; //to move up arguments
     switch (ch) {
       case 'h':
         usage(argv[0], EXIT_SUCCESS);
@@ -149,18 +166,21 @@ int main(int argc, char *argv[])
         flag = 1;
         printf("%s: invalid option '%c' (missing argument)\n", argv[0], optopt);
         usage(argv[0], EXIT_FAILURE);
+	  default:
+	    usage(argv[0], EXIT_FAILURE);
         break;
     }
   }
-  
   //check if it's a file, if not go to shell:
   //read from file
-  if(argv[1] != NULL && flag != 1){
-    if((ch = open_file(argv[1])) == EXIT_FAILURE){
+  if(argv[count] != NULL){
+    if((ch = open_file(argv[count])) == EXIT_FAILURE){
       printf("%s: failed: %s\n", argv[0], strerror(errno));
       exit(EXIT_FAILURE); //Error on read
     }
-    else{flag = 1;}
+    else{
+		flag = 1;
+	}
   }
   //You got the red shell on your tail!
   while (1 && flag != 1)
@@ -210,7 +230,6 @@ int eval_line(char *cmdline)
 	
   if ((pid = fork()) == 0)      /* child runs user job */
   {
-	  printf("debug::pid ID: %d\n", getpid());  //DEBUGGING
 	  foreground_pid = getpid(); //it's running in the foreground
 	  if (execvp(argv[0], argv) == -1)
     {
@@ -224,13 +243,14 @@ int eval_line(char *cmdline)
     { fprintf(stderr, "%s: could not add process to list: %d\n", argv[0], \
               pid); }
     if (verbose) list_print(&background_pid_table);
-    foreground_pid = 0; //It's running in the background
-    printf("background process %d: %s", (int) pid, cmdline);
+    //foreground_pid = 0; //It's running in the background
+    printf("background process %d: %s\n", (int) pid, cmdline);
   }
   else
   {
     while (waitpid(pid, &ret, 0) == (pid_t) -1)
     {
+	  list_remove(&background_pid_table, pid);
       if (errno == ECHILD) {
         fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
         exit(EXIT_FAILURE);
@@ -287,12 +307,8 @@ int parse(char *buf, char *argv[])
 
 int builtin(char *argv[]){
   if (strcmp(argv[0], "exit") == 0) {     /* exit command */
-		if(background_pid_table.length == 1){
-			printf("There is one backgound job running. \n");
-			return 1;
-		}
-		else if(background_pid_table.length > 0){
-			printf("There are %d backgound jobs running. \n",background_pid_table.length);
+		if(background_pid_table.length > 0){
+			printf("There are %d background jobs running. \n",background_pid_table.length);
 			return 1;
 		}
 		else{

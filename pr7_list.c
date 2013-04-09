@@ -52,6 +52,23 @@ struct pr7_process *list_add(struct pr7_list *list, pid_t pid)
   return process;
 }
 
+// Removes the entry pointed to by entry from the list
+int list_remove(struct pr7_list *list, struct pr7_process *entry)
+{
+  if (entry->prev == NULL) list->head = entry->next;
+  else entry->prev->next = entry->next;
+  
+  if (entry->next == NULL) list->tail = entry->prev;
+  else entry->next->prev = entry->prev;
+  
+  free(entry);
+  //  if (verbose) { print something??? }
+  
+  list->length--;
+  
+  return list->length;
+}
+
 // Searches list for process with given PID, returns NULL if not found
 struct pr7_process *list_search(struct pr7_list *list, pid_t key)
 {
@@ -81,33 +98,24 @@ struct pr7_process *list_add_once(struct pr7_list *list, pid_t pid, \
 }
 
 // Updates the specified PID entry, does nothing if PID not found
-void list_update_entry(struct pr7_list *list, pid_t pid, int status)
+struct pr7_process *list_update_entry(struct pr7_list *list, pid_t pid, int status)
 {
   struct pr7_process *entry = list_search(list, pid);
   if (entry == NULL) return;
   
   entry->state = STATE_TERMINATED;
   entry->exit_status = status;
+  
+  return entry;
 }
 
 // Removes (if possible) the specified PID from the list, returns new length
-int list_remove(struct pr7_list *list, pid_t pid)
+int list_remove_entry(struct pr7_list *list, pid_t pid)
 {
   struct pr7_process *entry = list_search(list, pid);
   if (entry == NULL) return list->length;
   
-  if (entry->prev == NULL) list->head = entry->next;
-  else entry->prev->next = entry->next;
-  
-  if (entry->next == NULL) list->tail = entry->prev;
-  else entry->next->prev = entry->prev;
-  
-  free(entry);
-  //  if (verbose) { print something??? }
-  
-  list->length--;
-  
-  return list->length;
+  return list_remove(list, entry);
 }
 
 // Prints the contents of the list

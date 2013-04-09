@@ -165,6 +165,7 @@ int main(int argc, char *argv[])
     if (feof(stdin))                  /* end of file */
     { break; }
 	  ret = eval_line(cmdline);
+    cleanup_terminated_children();
   }
 	
 	return ret;
@@ -222,6 +223,8 @@ int eval_line(char *cmdline)
   }
   else
   {
+    pid_t wpid;
+    int status;
     while (waitpid(pid, &ret, 0) == (pid_t) -1)
     {
       if (errno == ECHILD) {
@@ -418,3 +421,42 @@ int builtin(char *argv[]){
 
 /*----------------------------------------------------------------------------*/
 
+/* Find all the child processes that have terminated, without waiting.
+ *
+ * This code is adapted from the GNU info page on waitpid() and the Solaris
+ * man page for waitpid(2).
+ */
+
+int cleanup_terminated_children(void)
+{
+  pid_t pid;
+  int status;
+  int count = 0;
+  struct pr7_process *entry;
+  
+  while ((pid = waitpid(-1, &status, WNOHANG)) != 0)
+  {
+    if (pid == -1)            /* returns -1 if there was an error */
+    {
+      /* errno will have been set by waitpid() */
+      if (errno == ECHILD)  /* no children */
+      { break; }
+      if (errno == EINTR)   /* waitpid() was interrupted by a signal */
+      { continue; }       /* try again */
+      else
+      {
+        printf("unexpected error in cleanup_terminated_children(): %s\n", \
+               strerror(errno));
+        break;
+      }
+    }
+    
+    printf("process %d terminated with status %d", pid, status);
+    entry = list_update_entry(&background_pid_table, pid, status);
+    if (verbose) list_print(&background_pid_table)
+    if (entry != NULL) list_remove(&background_pid_table, entry);
+    count++;
+  }
+  
+  return count;
+}

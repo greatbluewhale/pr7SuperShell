@@ -237,8 +237,8 @@ int eval_line(char *cmdline)
   {
     while (waitpid(pid, &ret, 0) == (pid_t) -1)
     {
-	  list_remove(&background_pid_table, pid);
-      if (errno == ECHILD) {
+      if (errno == ECHILD)
+      {
         fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
         exit(EXIT_FAILURE);
       }

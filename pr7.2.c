@@ -25,8 +25,9 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include "pr7_list.h"
 #include <sys/stat.h>
+#include "pr7_list.h"
+#include "pr7_stack.h"
 #define MAXLINE 128
 #define MAXARGS 128
 /* for use with getopt(3) */
@@ -43,6 +44,8 @@ int getopt(int argc, char * const argv[], const char *optstring);
 int setenv(const char *envname, const char *envval, int overwrite);
 int unsetenv(const char *name);
 int open_shell_script(char const *filename);
+int getarrow(char *com, struct pr7_stack *com_hist, FILE *fp);
+  /* reads a command and brings up command history when arrow key is pressed */
 int eval_line(char *cmdline);                 /* evaluate a command line */
 int parse(char *buf, char *argv[]);           /* build the argv array */
 int builtin(char *argv[]);                    /* if builtin command, run it */
@@ -124,6 +127,7 @@ int main(int argc, char *argv[])
   char temp_start[MAXLINE];
   struct stat sb;
   char cmdline[MAXLINE];                /* command line */
+  
   int flag = 0; //don't go to shell if 1
   list_init(&background_pid_table);
   background_pid_table.name = "Background Processes";
@@ -215,18 +219,62 @@ int main(int argc, char *argv[])
 	}
   }
   //You got the red shell on your tail!
+  struct pr7_stack command_stack;
+  stack_init(&command_stack);
+  
   while (1 && flag != 1)
   {
     /* issue prompt and read command line */
     printf("%s%% ", argv[0]);
-    fgets(cmdline, MAXLINE, stdin);   /* cmdline includes trailing newline */
+    if (getarrow(cmdline, &command_stack, stdin) == 0)
+    {
+      fgets(cmdline, MAXLINE, stdin);   /* cmdline includes trailing newline */
+    }
     if (feof(stdin))                  /* end of file */
     { break; }
+    stack_push(&command_stack, cmdline);
 	  ret = eval_line(cmdline);
-      cleanup_terminated_children();
+    cleanup_terminated_children();
   }
 	
 	return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+
+/* reads a command from the input and references command history if up/down 
+ * arrow key is pressed */
+int getarrow(char *com, struct pr7_stack *com_hist, FILE *fp)
+{
+  struct pr7_command *cur = NULL;
+  
+  int c0 = -1;
+  int c1 = -1;
+  int c2 = -1;
+  
+  while (((c0 = fgetc(fp)) == 27) && ((c1 = fgetc(fp)) == 91) && \
+         (((c2 = fgetc(fp)) == 65) || (c2 == 66)))
+  {
+    if (c2 == 65)
+    {
+      if (cur == NULL) cur = com_hist->top;
+      else if (cur->next != NULL) cur = cur->next;
+    }
+    if ((c2 == 66) && (cur != NULL))
+    {
+      cur = cur->prev;
+    }
+    c0 = c1 = c2 = -1;
+  }
+  
+  if (c2 != -1) ungetc(c2, fp);
+  if (c1 != -1) ungetc(c1, fp);
+  if (c0 != -1) ungetc(c0, fp);
+  
+  if (cur == NULL) return 0;
+  
+  com = cur->command;
+  return 1;
 }
 
 /*----------------------------------------------------------------------------*/

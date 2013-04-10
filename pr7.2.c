@@ -26,7 +26,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include "pr7_list.h"
-
+#include <sys/stat.h>
 #define MAXLINE 128
 #define MAXARGS 128
 /* for use with getopt(3) */
@@ -37,6 +37,7 @@ extern int opterr;
 
 int verbose = 0;
 int kill(pid_t pid, int sig);
+int stat(const char *path, struct stat *buf);
 int execve(const char *filename, char *const argv [], char *const envp[]);
 int getopt(int argc, char * const argv[], const char *optstring);
 int setenv(const char *envname, const char *envval, int overwrite);
@@ -211,6 +212,7 @@ int eval_line(char *cmdline)
   int background;       /* should the job run in background or foreground? */
   pid_t pid;            /* process id */
   int ret = EXIT_SUCCESS;
+  int flag = 0;
   
   strcpy(buf, cmdline);                 /* buf[] will be modified by parse() */
   background = parse(buf, argv);        /* build the argv array */
@@ -226,10 +228,21 @@ int eval_line(char *cmdline)
   if (builtin(argv) == 1)       /* the work is done */
   { return ret; }
   
-  if(open_shell_script(argv[0]) == EXIT_FAILURE){ /*if it's a file, get out of here and do that!*/
+  //check if it's a file, skip the shell_script if so
+  struct stat sb;
+	if(!stat(argv[0], &sb)){
+		if(S_ISREG(sb.st_mode) && sb.st_mode & 0111){
+			printf("%s is executable\n", argv[0]);
+			flag = 1;
+		}
+	}
+
+  //read from shell script
+  if(flag == 0){
+	if((open_shell_script(argv[0]) == EXIT_FAILURE)){ /*if it's a shell_script, get out of here and do that!*/
+	}
+	else{return ret;}
   }
-  else{return ret;}
-	
   if ((pid = fork()) == 0)      /* child runs user job */
   {
 	  foreground_pid = getpid(); //it's running in the foreground

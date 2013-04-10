@@ -12,6 +12,8 @@
 #include <string.h>
 #include "pr7_stack.h"
 
+char *strdup(const char *s1);
+
 // Initializes stack
 void stack_init(struct pr7_stack *stack)
 {
@@ -30,7 +32,6 @@ struct pr7_command *stack_push(struct pr7_stack *stack, char *command)
             __LINE__);
     return NULL;
   }
-  
   new->command = strdup(command);
   int len = strlen(new->command);
   if (new->command[len-1] == '\n')
@@ -39,12 +40,9 @@ struct pr7_command *stack_push(struct pr7_stack *stack, char *command)
     else new->command[len-1] = '\0';
   }
   else if (new->command[len-1] == '\r') new->command[len-1] = '\0';
-  
   new->next = stack->top;
   new->prev = NULL;
-  
   stack->top = new;
   if (new->next != NULL) new->next->prev = new;
-  
   return new;
 }

@@ -37,6 +37,7 @@ extern int optopt;
 extern int opterr;
 
 int verbose = 0;
+int interactive = 0;
 int kill(pid_t pid, int sig);
 int stat(const char *path, struct stat *buf);
 int execve(const char *filename, char *const argv [], char *const envp[]);
@@ -145,10 +146,7 @@ int main(int argc, char *argv[])
         break;
       case 'i':
 		count++; //to move up arguments
-        if((ch = open_shell_script("pr7.init")) == EXIT_FAILURE){
-          printf("%s: failed: %s\n", argv[0], strerror(errno));
-          exit(EXIT_FAILURE); //Error on read
-        }
+        interactive++;
 		flag = 0;
         break;
       case 'e':
@@ -327,6 +325,7 @@ int eval_line(char *cmdline)
       fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
       _exit(EXIT_FAILURE);
     }
+	
   }
   if (background)            /* parent waits for foreground job to terminate */
   {
@@ -451,9 +450,11 @@ int builtin(char *argv[]){
       printf("%s: failed: %s\n", argv[0], strerror(errno));
       chdir(ptr); // Stay where you were.
     }
-    
-    if(setenv("PWD", argv[1], 1) == -1){	//Change PWD environment variable.
-      setenv("PWD", ptr, 0); // Keep path where you were.
+    size = pathconf(".", _PC_PATH_MAX);
+    if ((buf = (char *)malloc((size_t)size)) != NULL)
+      ptr = getcwd(buf, (size_t)size);
+	  
+    if(setenv("PWD", ptr, 1) == -1){	//Change PWD environment variable.
     }
     
     //printf("%s \n", getenv("PWD"));  //debugging purposes
@@ -561,12 +562,12 @@ int cleanup_terminated_children(void)
         break;
       }
     }
-    if(verbose > 0)
+    if(interactive > 0)
 		{ printf("process %d terminated with status %d\n", pid, status); }
     entry = list_update_entry(&background_pid_table, pid, status);
-    if (verbose) list_print(&background_pid_table);
+    if (interactive) list_print(&background_pid_table);
     if (entry != NULL) list_remove(&background_pid_table, entry);
-    if (verbose) list_print(&background_pid_table);
+    if (interactive) list_print(&background_pid_table);
     count++;
   }
   

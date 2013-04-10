@@ -120,7 +120,7 @@ int open_shell_script(char const *filename){
 int main(int argc, char *argv[])
 {
   int ret = EXIT_SUCCESS;
-  int ch, count = 1;
+  int ch, count = 1, temp = 1;
   char temp_start[MAXLINE];
   struct stat sb;
   char cmdline[MAXLINE];                /* command line */
@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
         break;
       case 'e':
 		count++; //to move up arguments
-			while(argv[argc] != NULL) {
-				printf("%s ", argv[argc++]);
+			while(argv[temp] != NULL) {
+				printf("%s ", argv[temp++]);
 			}
 			printf("\n");
         flag = 1;
@@ -186,10 +186,10 @@ int main(int argc, char *argv[])
   if(!stat(argv[count], &sb)){
 	if(S_ISREG(sb.st_mode) && sb.st_mode & 0111){
 		if(argv[count] != NULL){
-			if(execvp(start_up_file, argv) == -1){ //try to execute file.
+			if(execvp(start_up_file, argv) == -1){ //try to execute start_up_file.
 			}
 			else{
-				if(execvp("pr7.init", argv) == -1){ //try to execute file.
+				if(execvp("pr7.init", argv) == -1){ //try default
 				}
 				else{
 					printf("%s: start_up_file and pr7.init failed: %s\n", argv[0], strerror(errno));
@@ -275,16 +275,6 @@ int eval_line(char *cmdline)
   {
 	  foreground_pid = getpid(); //it's running in the foreground
 	  
-	if(execvp(start_up_file, argv) == -1){ //try to execute file.
-	}
-	else{
-		if(execvp("pr7.init", argv) == -1){ //try to execute file.
-		}
-		else{
-			printf("%s: start_up_file and pr7.init failed: %s\n", argv[0], strerror(errno));
-			exit(EXIT_FAILURE); //Error on read
-		}
-	}
 	if (execvp(argv[0], argv) == -1){
       fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
       _exit(EXIT_FAILURE);

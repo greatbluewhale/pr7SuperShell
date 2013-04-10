@@ -37,10 +37,11 @@ extern int opterr;
 
 int verbose = 0;
 int kill(pid_t pid, int sig);
+int execve(const char *filename, char *const argv [], char *const envp[]);
 int getopt(int argc, char * const argv[], const char *optstring);
 int setenv(const char *envname, const char *envval, int overwrite);
 int unsetenv(const char *name);
-int open_file(char const *filename);
+int open_shell_script(char const *filename);
 int eval_line(char *cmdline);                 /* evaluate a command line */
 int parse(char *buf, char *argv[]);           /* build the argv array */
 int builtin(char *argv[]);                    /* if builtin command, run it */
@@ -92,7 +93,7 @@ static void usage(char *prog, int status)
 }
 /*----------------------------------------------------------------------------*/
 /* Opens file, checks for NULL name, but don't send a NULL name to it.*/
-int open_file(char const *filename){
+int open_shell_script(char const *filename){
   int ret;
 	FILE *oFile;
 	if(filename != NULL)
@@ -103,10 +104,11 @@ int open_file(char const *filename){
       char strBuf[MAXLINE];
       while(1){
         fgets(strBuf, MAXLINE, oFile);
-        if(feof(oFile)){
+        if(feof(oFile))
           break;
-        }
         ret = eval_line(strBuf);
+		if(ret != EXIT_SUCCESS)
+			break;
       }
       return ret;
     }
@@ -125,6 +127,8 @@ int main(int argc, char *argv[])
   signal(SIGINT, SIGINT_handler);	//install signal handler to start.
   while ((ch = getopt(argc, argv, ":hvies:")) != -1){
     count++; //to move up arguments
+	if(flag != 1) //did not catch anything
+		break;
     switch (ch) {
       case 'h':
         usage(argv[0], EXIT_SUCCESS);
@@ -136,7 +140,7 @@ int main(int argc, char *argv[])
         break;
       case 'i':
         flag = 1;
-        if((ch = open_file("pr7.init")) == EXIT_FAILURE){
+        if((ch = open_shell_script("pr7.init")) == EXIT_FAILURE){
           printf("%s: failed: %s\n", argv[0], strerror(errno));
           exit(EXIT_FAILURE); //Error on read
         }
@@ -162,10 +166,17 @@ int main(int argc, char *argv[])
         break;
     }
   }
-  //check if it's a file, if not go to shell:
-  //read from file
+  //check if it's a file, if not go to shell_script:
   if(argv[count] != NULL){
-    if((ch = open_file(argv[count])) == EXIT_FAILURE){
+    if(execvp(argv[1], argv) == -1){ //try to execute file.
+    }
+    else{
+		flag = 1;
+	}
+  }
+  //read from shell script
+  if(argv[count] != NULL && flag != 1){
+    if((ch = open_shell_script(argv[count])) == EXIT_FAILURE){
       printf("%s: failed: %s\n", argv[0], strerror(errno));
       exit(EXIT_FAILURE); //Error on read
     }
@@ -182,7 +193,7 @@ int main(int argc, char *argv[])
     if (feof(stdin))                  /* end of file */
     { break; }
 	  ret = eval_line(cmdline);
-    cleanup_terminated_children();
+      cleanup_terminated_children();
   }
 	
 	return ret;
@@ -215,7 +226,7 @@ int eval_line(char *cmdline)
   if (builtin(argv) == 1)       /* the work is done */
   { return ret; }
   
-  if(open_file(argv[0]) == EXIT_FAILURE){ /*if it's a file, get out of here and do that!*/
+  if(open_shell_script(argv[0]) == EXIT_FAILURE){ /*if it's a file, get out of here and do that!*/
   }
   else{return ret;}
 	

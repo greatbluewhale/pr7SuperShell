@@ -47,6 +47,7 @@ int eval_line(char *cmdline);                 /* evaluate a command line */
 int parse(char *buf, char *argv[]);           /* build the argv array */
 int builtin(char *argv[]);                    /* if builtin command, run it */
 int cleanup_terminated_children(void);        /* reap background processes */
+char start_up_file[MAXLINE];
 extern char **environ;
 static pid_t foreground_pid = 0;
 static struct pr7_list background_pid_table; // backgroud process ID table
@@ -97,22 +98,21 @@ static void usage(char *prog, int status)
 int open_shell_script(char const *filename){
   int ret;
 	FILE *oFile;
-	if(filename != NULL)
-    if((oFile = fopen(filename, "r")) != NULL){
-	  if(verbose > 0){
-			printf("pr7: reading %s\n", filename);
-		}
-      char strBuf[MAXLINE];
-      while(1){
-        fgets(strBuf, MAXLINE, oFile);
-        if(feof(oFile))
-          break;
-        ret = eval_line(strBuf);
-		if(ret != EXIT_SUCCESS)
+	if(filename != NULL){
+		if((oFile = fopen(filename, "r")) != NULL){
+		if(verbose > 0){
+				printf("pr7: reading %s\n", filename);
+			}
+		char strBuf[MAXLINE];
+		while(1){
+			fgets(strBuf, MAXLINE, oFile);
+			if(feof(oFile))
 			break;
-      }
-      return ret;
-    }
+			ret = eval_line(strBuf);
+		}
+		return ret;
+		}
+	}
 	return EXIT_FAILURE;
 }
 /*----------------------------------------------------------------------------*/
@@ -121,37 +121,52 @@ int main(int argc, char *argv[])
 {
   int ret = EXIT_SUCCESS;
   int ch, count = 1;
+  char temp_start[MAXLINE];
+  struct stat sb;
   char cmdline[MAXLINE];                /* command line */
   int flag = 0; //don't go to shell if 1
   list_init(&background_pid_table);
   background_pid_table.name = "Background Processes";
   signal(SIGINT, SIGINT_handler);	//install signal handler to start.
   while ((ch = getopt(argc, argv, ":hvies:")) != -1){
-    count++; //to move up arguments
-	if(flag != 1) //did not catch anything
-		break;
     switch (ch) {
       case 'h':
+		count++; //to move up arguments
         usage(argv[0], EXIT_SUCCESS);
         flag = 1;
         break;
       case 'v':
+		count++; //to move up arguments
         verbose++;
-        flag = 1;
         break;
       case 'i':
-        flag = 1;
+		count++; //to move up arguments
         if((ch = open_shell_script("pr7.init")) == EXIT_FAILURE){
           printf("%s: failed: %s\n", argv[0], strerror(errno));
           exit(EXIT_FAILURE); //Error on read
         }
+		flag = 0;
         break;
       case 'e':
+		count++; //to move up arguments
+			while(argv[argc] != NULL) {
+				printf("%s ", argv[argc++]);
+			}
+			printf("\n");
         flag = 1;
         break;
       case 's':
+		count++; //to move up arguments
+		strcpy(temp_start,optarg);
+		if(!stat(temp_start, &sb)){
+			if(S_ISREG(sb.st_mode) && sb.st_mode & 0111){
+				strcpy(start_up_file, temp_start);
+			}
+			else{
+				strcpy(start_up_file, "pr7.init");
+			}
+		}
         flag = 1;
-        //run startup file
         break;
       case '?':
         flag = 1;
@@ -168,11 +183,25 @@ int main(int argc, char *argv[])
     }
   }
   //check if it's a file, if not go to shell_script:
-  if(argv[count] != NULL){
-    if(execvp(argv[1], argv) == -1){ //try to execute file.
-    }
-    else{
-		flag = 1;
+  if(!stat(argv[count], &sb)){
+	if(S_ISREG(sb.st_mode) && sb.st_mode & 0111){
+		if(argv[count] != NULL){
+			if(execvp(start_up_file, argv) == -1){ //try to execute file.
+			}
+			else{
+				if(execvp("pr7.init", argv) == -1){ //try to execute file.
+				}
+				else{
+					printf("%s: start_up_file and pr7.init failed: %s\n", argv[0], strerror(errno));
+					exit(EXIT_FAILURE); //Error on read
+				}
+			}
+			if(execvp(argv[count], argv) == -1){ //try to execute file.
+			}
+			else{
+				flag = 1;
+			}
+		}
 	}
   }
   //read from shell script
@@ -232,7 +261,6 @@ int eval_line(char *cmdline)
   struct stat sb;
 	if(!stat(argv[0], &sb)){
 		if(S_ISREG(sb.st_mode) && sb.st_mode & 0111){
-			printf("%s is executable\n", argv[0]);
 			flag = 1;
 		}
 	}
@@ -246,8 +274,18 @@ int eval_line(char *cmdline)
   if ((pid = fork()) == 0)      /* child runs user job */
   {
 	  foreground_pid = getpid(); //it's running in the foreground
-	  if (execvp(argv[0], argv) == -1)
-    {
+	  
+	if(execvp(start_up_file, argv) == -1){ //try to execute file.
+	}
+	else{
+		if(execvp("pr7.init", argv) == -1){ //try to execute file.
+		}
+		else{
+			printf("%s: start_up_file and pr7.init failed: %s\n", argv[0], strerror(errno));
+			exit(EXIT_FAILURE); //Error on read
+		}
+	}
+	if (execvp(argv[0], argv) == -1){
       fprintf(stderr, "%s: failed: %s\n", argv[0], strerror(errno));
       _exit(EXIT_FAILURE);
     }
